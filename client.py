@@ -1,25 +1,42 @@
 import socket
 import sys
+import os
+import struct
 import config
+import upload
 
 def main():
-    # Target address configuration
     server_ip = config.SERVER_IP
     server_port = config.SERVER_PORT
     
+    target_filename = "test.txt"
+    
+    if not os.path.exists(target_filename):
+        with open(target_filename, "w") as f:
+            f.write("Hello Cloud Server backend! This is a chunked stream experiment.")
+
     print(f"Initializing client socket layer...")
     
     try:
-        # 1. Create a socket object
-        # AF_INET = IPv4, SOCK_STREAM = TCP
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        
-        print(f"Attempting connection handshake with {server_ip}:{server_port}...")
-        # 2. Connect to the remote server architecture
         client_socket.connect((server_ip, server_port))
+        print("Connected to the C server backend.")
         
-        print(" Handshake successful! Connected to the C server backend.")
+        command_opcode = b'\x01'
         
+        if command_opcode == b'\x01':
+            # --- UPLOAD MODE REGISTERED ---
+            client_socket.sendall(command_opcode)
+            
+            # Pass execution off to our dedicated module function!
+            upload.handle_upload(client_socket, target_filename)
+            
+        elif command_opcode == b'\x02':
+            # --- DOWNLOAD MODE REGISTERED ---
+            print("[CLIENT DOWNLOAD] Download sequence requested (Placeholder).")
+            # Future implementation...
+
+
     except ConnectionRefusedError:
         print("Connection refused. Is the C server running and listening?")
         sys.exit(1)
@@ -27,7 +44,6 @@ def main():
         print(f"An error occurred: {e}")
         sys.exit(1)
     finally:
-        # 3. Clean up the socket resource channel
         print("Closing client socket channel.")
         client_socket.close()
 
