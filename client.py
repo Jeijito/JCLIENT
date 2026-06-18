@@ -5,16 +5,10 @@ import struct
 import config
 import upload
 
-def main():
+def run_client_transaction(command_opcode, dynamic_filename):
     server_ip = config.SERVER_IP
     server_port = config.SERVER_PORT
     
-    target_filename = "test.txt"
-    
-    if not os.path.exists(target_filename):
-        with open(target_filename, "w") as f:
-            f.write("Hello Cloud Server backend! This is a chunked stream experiment.")
-
     print(f"Initializing client socket layer...")
     
     try:
@@ -22,14 +16,11 @@ def main():
         client_socket.connect((server_ip, server_port))
         print("Connected to the C server backend.")
         
-        command_opcode = b'\x01'
-        
         if command_opcode == b'\x01':
-            # --- UPLOAD MODE REGISTERED ---
             client_socket.sendall(command_opcode)
             
             # Pass execution off to our dedicated module function!
-            upload.handle_upload(client_socket, target_filename)
+            upload.handle_upload(client_socket, dynamic_filename)
             
         elif command_opcode == b'\x02':
             # --- DOWNLOAD MODE REGISTERED ---
@@ -39,13 +30,21 @@ def main():
 
     except ConnectionRefusedError:
         print("Connection refused. Is the C server running and listening?")
-        sys.exit(1)
+        raise # Pass the error upward so the UI can catch it and display it
     except Exception as e:
         print(f"An error occurred: {e}")
-        sys.exit(1)
+        raise
     finally:
         print("Closing client socket channel.")
         client_socket.close()
+
+
+def main():
+    target_filename = "test.txt"
+    if not os.path.exists(target_filename):
+        with open(target_filename, "w") as f:
+            f.write("Hello Cloud Server backend! This is a chunked stream experiment.")
+
 
 if __name__ == "__main__":
     main()

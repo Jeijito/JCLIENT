@@ -3,7 +3,10 @@ import struct
 
 def handle_upload(client_socket, target_filename):
     # A. Extract and encode metadata parameters
-    filename_bytes = target_filename.encode('utf-8')
+
+    pure_filename = os.path.basename(target_filename)
+
+    filename_bytes = pure_filename.encode('utf-8')
     filename_len = len(filename_bytes)
     file_size = os.path.getsize(target_filename)
     
